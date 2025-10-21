@@ -16,7 +16,7 @@ def solve_maze(self):
                 came_from[(ny, nx)] = (y, x)
                 queue.append((ny, nx))
 
-    # Vẽ đường đi (màu vàng)
+    # Vẽ đường đi 
     cell = goal
     while cell and cell in came_from:
         y, x = cell
