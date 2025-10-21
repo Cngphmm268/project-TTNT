@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import random
 
 def generate_maze(rows, cols, extra_paths=40):
@@ -9,19 +8,6 @@ def generate_maze(rows, cols, extra_paths=40):
     # ensure odd sizes could be nicer, but we accept any size
     maze = [[1 for _ in range(cols)] for _ in range(rows)]
     directions = [(0,1),(1,0),(0,-1),(-1,0)]
-=======
-# maze/maze_generator.py
-import random
-
-def generate_maze(rows, cols, extra_paths=10):
-    """
-    Sinh mê cung có thể giải được và có nhiều đường rẽ.
-    Trả về ma trận 0 (đường) và 1 (tường).
-    """
-    maze = [[1 for _ in range(cols)] for _ in range(rows)]
-
-    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
->>>>>>> 81b7f8c56fbafc87a70c3eb4fbe733100dfd6e33
 
     def in_bounds(x, y):
         return 0 <= x < cols and 0 <= y < rows
@@ -31,16 +17,11 @@ def generate_maze(rows, cols, extra_paths=10):
         dirs = directions[:]
         random.shuffle(dirs)
         for dx, dy in dirs:
-<<<<<<< HEAD
             nx, ny = x + dx*2, y + dy*2
-=======
-            nx, ny = x + dx * 2, y + dy * 2
->>>>>>> 81b7f8c56fbafc87a70c3eb4fbe733100dfd6e33
             if in_bounds(nx, ny) and maze[ny][nx] == 1:
                 maze[y + dy][x + dx] = 0
                 carve(nx, ny)
 
-<<<<<<< HEAD
     # start carving from (0,0)
     carve(0, 0)
     # ensure goal open
@@ -55,34 +36,13 @@ def generate_maze(rows, cols, extra_paths=10):
     open_cells = [(y, x) for y in range(1, rows-1) for x in range(1, cols-1) if maze[y][x] == 1]
     random.shuffle(open_cells)
     for (y, x) in open_cells[:extra_paths]:
-=======
-    # Bắt đầu từ (0, 0)
-    maze[0][0] = 0
-    carve(0, 0)
-    maze[rows - 1][cols - 1] = 0  # đảm bảo đích mở
-
-    # Mở thêm đường ngẫu nhiên để có nhiều hướng rẽ
-    open_cells = [
-        (y, x) for y in range(1, rows - 1)
-        for x in range(1, cols - 1)
-        if maze[y][x] == 1
-    ]
-
-    random.shuffle(open_cells)
-    for i, (y, x) in enumerate(open_cells[:extra_paths]):
->>>>>>> 81b7f8c56fbafc87a70c3eb4fbe733100dfd6e33
         maze[y][x] = 0
 
     return maze
 
 
-<<<<<<< HEAD
 # quick debug runner
 if __name__ == "__main__":
     m = generate_maze(21, 21, extra_paths=30)
-=======
-if __name__ == "__main__":
-    m = generate_maze(15, 15, extra_paths=10)
->>>>>>> 81b7f8c56fbafc87a70c3eb4fbe733100dfd6e33
     for row in m:
         print("".join("  " if c == 0 else "██" for c in row))
