@@ -42,7 +42,6 @@ def generate_maze(rows, cols, extra_paths=10):
     return maze
 
 
-# --- Kiểm thử nhanh ---
 if __name__ == "__main__":
     m = generate_maze(15, 15, extra_paths=10)
     for row in m:
