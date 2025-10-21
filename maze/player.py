@@ -16,4 +16,4 @@ class Player:
             self.canvas.move(self.icon, dx * self.cell_size, dy * self.cell_size)
             if (ny, nx) == self.goal:
                 self.canvas.create_text(cols * self.cell_size // 2, rows * self.cell_size // 2,
-                                        text="🎉 Thắng rồi!", fill="red", font=("Arial", 20, "bold"))
+                                        text="🎉 Win rồi!", fill="red", font=("Arial", 20, "bold"))
