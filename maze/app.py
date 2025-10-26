@@ -1,10 +1,12 @@
+# maze/app.py
 import tkinter as tk
 from tkinter import ttk
 import time
 
 from maze.maze_generator import generate_maze
-from maze.maze_solver import get_solver_generator
 from maze.player import Player
+from maze.graph import grid_to_graph
+from maze.maze_solver import get_solver_generator
 
 # Kích thước hiển thị
 ROWS, COLS = 20, 25
@@ -13,24 +15,21 @@ CELL_SIZE = 30
 class MazeApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Maze Visualizer — BFS/DFS/Dijkstra/A*")
+        self.root.title("Maze Visualizer — Graph-based BFS/DFS/Dijkstra/A*")
 
-        # Canvas hiển thị mê cung (bên trái)
         self.canvas = tk.Canvas(root, width=COLS * CELL_SIZE, height=ROWS * CELL_SIZE, bg="white")
         self.canvas.grid(row=0, column=0, rowspan=4, padx=10, pady=10)
 
-        # Khung điều khiển (bên phải, sắp dọc)
         control_frame = tk.Frame(root)
         control_frame.grid(row=0, column=1, sticky="n", padx=10, pady=10)
 
-        # Các nút điều khiển
         button_width = 20
         tk.Button(control_frame, text="🌀 Tạo mê cung mới", command=self.create_maze, width=button_width).pack(pady=6)
         tk.Button(control_frame, text="▶ Bắt đầu", command=self.start_solving, width=button_width).pack(pady=6)
         tk.Button(control_frame, text="■ Dừng", command=self.stop_solving, width=button_width).pack(pady=6)
-        tk.Button(control_frame, text="🔄 Đặt lại", command=self.reset_player, width=button_width).pack(pady=6)
+        # Nút Đặt lại giờ gọi reset_state để giữ maze nhưng xóa kết quả
+        tk.Button(control_frame, text="🔄 Đặt lại", command=self.reset_state, width=button_width).pack(pady=6)
 
-        # Chọn thuật toán
         tk.Label(control_frame, text="Thuật toán:").pack(pady=(15, 2))
         self.algo_var = tk.StringVar(value="BFS")
         self.algo_combo = ttk.Combobox(control_frame, textvariable=self.algo_var,
@@ -38,19 +37,17 @@ class MazeApp:
                                        state="readonly", width=button_width - 4)
         self.algo_combo.pack()
 
-        # Thanh tốc độ
         tk.Label(control_frame, text="Tốc độ:").pack(pady=(15, 2))
         self.speed_var = tk.IntVar(value=60)
         self.speed_scale = tk.Scale(control_frame, from_=1, to=100, orient="horizontal",
                                     variable=self.speed_var, length=180)
         self.speed_scale.pack()
 
-        # Nhãn hiển thị kết quả
         self.info_label = tk.Label(control_frame, text="Kết quả: Chưa có", justify="center", wraplength=200)
         self.info_label.pack(pady=(20, 0))
 
-        # Trạng thái
         self.maze = []
+        self.graph = None
         self.player = None
         self.start = (0, 0)
         self.goal = (ROWS - 1, COLS - 1)
@@ -60,22 +57,20 @@ class MazeApp:
         self.expanded_set = set()
         self.path_cells = []
 
-        # Gán sự kiện click
         self.canvas.bind("<Button-1>", self.on_left_click)
         self.canvas.bind("<Button-3>", self.on_right_click)
 
-        # Di chuyển bằng phím mũi tên
         root.bind("<Up>", lambda e: self._move_player(0, -1))
         root.bind("<Down>", lambda e: self._move_player(0, 1))
         root.bind("<Left>", lambda e: self._move_player(-1, 0))
         root.bind("<Right>", lambda e: self._move_player(1, 0))
 
-        # Khởi tạo mê cung & người chơi
         self.create_maze()
 
-    # ---------------- Maze Drawing ----------------
     def create_maze(self):
         self.maze = generate_maze(ROWS, COLS, extra_paths=int(ROWS * COLS * 0.08))
+        self.graph = grid_to_graph(self.maze)
+
         self.canvas.delete("all")
         for r in range(ROWS):
             for c in range(COLS):
@@ -101,7 +96,10 @@ class MazeApp:
         x2, y2 = x1 + CELL_SIZE, y1 + CELL_SIZE
         self.canvas.create_rectangle(x1, y1, x2, y2, fill="#88ddff", outline="blue", width=2, tags="start_cell")
         if self.player:
-            self.canvas.delete(self.player.icon)
+            try:
+                self.canvas.delete(self.player.icon)
+            except Exception:
+                pass
         self.player = Player(self.canvas, r, c, CELL_SIZE, self.maze, self.goal)
 
     def _draw_goal(self):
@@ -111,21 +109,26 @@ class MazeApp:
         self.canvas.create_rectangle(x1, y1, x2, y2, fill="#7CFC00", outline="darkgreen", width=2, tags="goal_cell")
 
     def reset_state(self):
+        """
+        Giữ nguyên mê cung, start/goal; xóa các hình vẽ visited/expanded/path
+        và reset tất cả biến trạng thái để có thể chạy thuật toán khác.
+        """
         self.running = False
         self.solver_gen = None
         self.visited_set.clear()
         self.expanded_set.clear()
         self.path_cells.clear()
         self.info_label.config(text="Kết quả: Chưa có")
+        # xóa các tag vẽ
         self.canvas.delete("visit")
         self.canvas.delete("expand")
         self.canvas.delete("path")
+        # đảm bảo start/goal còn hiển thị
         self.canvas.delete("start_cell")
         self.canvas.delete("goal_cell")
         self._draw_goal()
         self._draw_start()
 
-    # ---------------- Mouse Handlers ----------------
     def on_left_click(self, event):
         c, r = event.x // CELL_SIZE, event.y // CELL_SIZE
         if 0 <= r < ROWS and 0 <= c < COLS and self.maze[r][c] == 0:
@@ -142,20 +145,28 @@ class MazeApp:
             self._draw_goal()
             self.reset_state()
 
-    # ---------------- Player ----------------
     def _move_player(self, dc, dr):
         if self.player:
             self.player.move(dc, dr)
 
-    # ---------------- Solving ----------------
     def start_solving(self):
         if self.running:
             return
+
+        if self.graph is None:
+            self.info_label.config(text="Kết quả: Graph chưa được tạo", fg="red")
+            return
+
+        if not self.graph.has_node(self.start) or not self.graph.has_node(self.goal):
+            self.info_label.config(text="Kết quả: start/goal không hợp lệ (đang ở tường)", fg="red")
+            return
+
         solver_name = self.algo_var.get()
-        solver_gen = get_solver_generator(solver_name, self.maze, self.start, self.goal)
+        solver_gen = get_solver_generator(solver_name, self.graph, self.start, self.goal)
         if solver_gen is None:
             self.info_label.config(text="Kết quả: Thuật toán không hợp lệ", fg="red")
             return
+        # trước khi chạy: xóa các vết cũ để trực quan
         self.canvas.delete("visit")
         self.canvas.delete("expand")
         self.canvas.delete("path")
@@ -210,17 +221,21 @@ class MazeApp:
             self.solver_gen = None
             self.info_label.config(text="Kết quả: Kết thúc", fg="black")
 
-    # ---------------- Helper ----------------
     def _draw_cell(self, r, c, tag=None, fill=None):
         x1, y1 = c * CELL_SIZE + 1, r * CELL_SIZE + 1
         x2, y2 = x1 + CELL_SIZE - 2, y1 + CELL_SIZE - 2
         self.canvas.create_rectangle(x1, y1, x2, y2, fill=fill or "yellow", outline="", tags=(tag or "vis"))
+        # redraw start/goal trên cùng
         self.canvas.delete("start_cell")
         self.canvas.delete("goal_cell")
         self._draw_goal()
         self._draw_start()
 
     def reset_player(self):
+        """
+        Hàm giữ cho backward-compatibility: đặt player về start.
+        (Không dùng làm 'Đặt lại' chính, vì nút Đặt lại gọi reset_state)
+        """
         if self.player:
             try:
                 self.canvas.delete(self.player.icon)
@@ -228,3 +243,9 @@ class MazeApp:
                 pass
         r, c = self.start
         self.player = Player(self.canvas, r, c, CELL_SIZE, self.maze, self.goal)
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = MazeApp(root)
+    root.mainloop()

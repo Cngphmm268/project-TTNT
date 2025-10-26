@@ -1,9 +1,8 @@
+# maze/maze_solver.py
 from collections import deque
 import heapq
-import time
 
-def bfs_generator(maze, start, goal):
-    rows, cols = len(maze), len(maze[0])
+def bfs_on_graph(graph, start, goal):
     q = deque([start])
     came_from = {start: None}
     yield ("visit", start)
@@ -12,14 +11,11 @@ def bfs_generator(maze, start, goal):
         yield ("expand", cur)
         if cur == goal:
             break
-        r, c = cur
-        for dr, dc in [(0,1),(1,0),(0,-1),(-1,0)]:
-            nr, nc = r+dr, c+dc
-            if 0 <= nr < rows and 0 <= nc < cols and maze[nr][nc] == 0 and (nr, nc) not in came_from:
-                came_from[(nr, nc)] = cur
-                q.append((nr, nc))
-                yield ("visit", (nr, nc))
-    # reconstruct
+        for (nbr, _) in graph.neighbors(cur):
+            if nbr not in came_from:
+                came_from[nbr] = cur
+                q.append(nbr)
+                yield ("visit", nbr)
     if goal in came_from:
         path = []
         cur = goal
@@ -32,8 +28,7 @@ def bfs_generator(maze, start, goal):
         yield ("path", None)
 
 
-def dfs_generator(maze, start, goal):
-    rows, cols = len(maze), len(maze[0])
+def dfs_on_graph(graph, start, goal):
     stack = [start]
     came_from = {start: None}
     yield ("visit", start)
@@ -42,13 +37,11 @@ def dfs_generator(maze, start, goal):
         yield ("expand", cur)
         if cur == goal:
             break
-        r, c = cur
-        for dr, dc in [(0,1),(1,0),(0,-1),(-1,0)]:
-            nr, nc = r+dr, c+dc
-            if 0 <= nr < rows and 0 <= nc < cols and maze[nr][nc] == 0 and (nr, nc) not in came_from:
-                came_from[(nr, nc)] = cur
-                stack.append((nr, nc))
-                yield ("visit", (nr, nc))
+        for (nbr, _) in graph.neighbors(cur):
+            if nbr not in came_from:
+                came_from[nbr] = cur
+                stack.append(nbr)
+                yield ("visit", nbr)
     if goal in came_from:
         path = []
         cur = goal
@@ -61,8 +54,7 @@ def dfs_generator(maze, start, goal):
         yield ("path", None)
 
 
-def dijkstra_generator(maze, start, goal):
-    rows, cols = len(maze), len(maze[0])
+def dijkstra_on_graph(graph, start, goal):
     heap = [(0, start)]
     dist = {start: 0}
     came_from = {start: None}
@@ -72,16 +64,13 @@ def dijkstra_generator(maze, start, goal):
         yield ("expand", cur)
         if cur == goal:
             break
-        r, c = cur
-        for dr, dc in [(0,1),(1,0),(0,-1),(-1,0)]:
-            nr, nc = r+dr, c+dc
-            if 0 <= nr < rows and 0 <= nc < cols and maze[nr][nc] == 0:
-                nd = d + 1
-                if (nr, nc) not in dist or nd < dist[(nr, nc)]:
-                    dist[(nr, nc)] = nd
-                    came_from[(nr, nc)] = cur
-                    heapq.heappush(heap, (nd, (nr, nc)))
-                    yield ("visit", (nr, nc))
+        for (nbr, w) in graph.neighbors(cur):
+            nd = d + w
+            if nbr not in dist or nd < dist[nbr]:
+                dist[nbr] = nd
+                came_from[nbr] = cur
+                heapq.heappush(heap, (nd, nbr))
+                yield ("visit", nbr)
     if goal in came_from:
         path = []
         cur = goal
@@ -94,10 +83,10 @@ def dijkstra_generator(maze, start, goal):
         yield ("path", None)
 
 
-def astar_generator(maze, start, goal):
-    rows, cols = len(maze), len(maze[0])
+def astar_on_graph(graph, start, goal):
     def h(a, b):
         return abs(a[0]-b[0]) + abs(a[1]-b[1])
+
     heap = [(h(start, goal), 0, start)]
     gscore = {start: 0}
     came_from = {start: None}
@@ -107,17 +96,14 @@ def astar_generator(maze, start, goal):
         yield ("expand", cur)
         if cur == goal:
             break
-        r, c = cur
-        for dr, dc in [(0,1),(1,0),(0,-1),(-1,0)]:
-            nr, nc = r+dr, c+dc
-            if 0 <= nr < rows and 0 <= nc < cols and maze[nr][nc] == 0:
-                tentative_g = gscore[cur] + 1
-                if (nr, nc) not in gscore or tentative_g < gscore[(nr, nc)]:
-                    gscore[(nr, nc)] = tentative_g
-                    f = tentative_g + h((nr, nc), goal)
-                    came_from[(nr, nc)] = cur
-                    heapq.heappush(heap, (f, tentative_g, (nr, nc)))
-                    yield ("visit", (nr, nc))
+        for (nbr, w) in graph.neighbors(cur):
+            tentative_g = gscore[cur] + w
+            if nbr not in gscore or tentative_g < gscore[nbr]:
+                gscore[nbr] = tentative_g
+                f = tentative_g + h(nbr, goal)
+                came_from[nbr] = cur
+                heapq.heappush(heap, (f, tentative_g, nbr))
+                yield ("visit", nbr)
     if goal in came_from:
         path = []
         cur = goal
@@ -130,15 +116,15 @@ def astar_generator(maze, start, goal):
         yield ("path", None)
 
 
-def get_solver_generator(name, maze, start, goal):
-    name = name.lower()
-    if name == "bfs":
-        return bfs_generator(maze, start, goal)
-    elif name == "dfs":
-        return dfs_generator(maze, start, goal)
-    elif name == "dijkstra":
-        return dijkstra_generator(maze, start, goal)
-    elif name == "a*":
-        return astar_generator(maze, start, goal)
+def get_solver_generator(name, graph, start, goal):
+    key = name.strip().lower()
+    if key == "bfs":
+        return bfs_on_graph(graph, start, goal)
+    elif key == "dfs":
+        return dfs_on_graph(graph, start, goal)
+    elif key == "dijkstra":
+        return dijkstra_on_graph(graph, start, goal)
+    elif key in ("a*", "astar", "a star"):
+        return astar_on_graph(graph, start, goal)
     else:
         return None
