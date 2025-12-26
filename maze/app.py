@@ -234,7 +234,7 @@ class MazeApp:
     def reset_player(self):
         """
         Hàm giữ cho backward-compatibility: đặt player về start.
-        (Không dùng làm 'Đặt lại' chính, vì nút Đặt lại gọi reset_state)
+        Không dùng làm 'Đặt lại' chính, vì nút Đặt lại gọi reset_state)
         """
         if self.player:
             try:
@@ -243,7 +243,6 @@ class MazeApp:
                 pass
         r, c = self.start
         self.player = Player(self.canvas, r, c, CELL_SIZE, self.maze, self.goal)
-
 
 if __name__ == "__main__":
     root = tk.Tk()
