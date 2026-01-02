@@ -1,4 +1,3 @@
-# maze/app.py
 import tkinter as tk
 from tkinter import ttk
 import time
@@ -8,7 +7,7 @@ from maze.player import Player
 from maze.graph import grid_to_graph
 from maze.maze_solver import get_solver_generator
 
-# Kích thước hiển thị
+#Kich thuoc hien thi
 ROWS, COLS = 20, 25
 CELL_SIZE = 30
 
@@ -24,23 +23,24 @@ class MazeApp:
         control_frame.grid(row=0, column=1, sticky="n", padx=10, pady=10)
 
         button_width = 20
-        tk.Button(control_frame, text="🌀 Tạo mê cung mới", command=self.create_maze, width=button_width).pack(pady=6)
-        tk.Button(control_frame, text="▶ Bắt đầu", command=self.start_solving, width=button_width).pack(pady=6)
-        tk.Button(control_frame, text="■ Dừng", command=self.stop_solving, width=button_width).pack(pady=6)
-        # Nút Đặt lại giờ gọi reset_state để giữ maze nhưng xóa kết quả
-        tk.Button(control_frame, text="🔄 Đặt lại", command=self.reset_state, width=button_width).pack(pady=6)
+        tk.Button(control_frame, text="🌀 Tạo mê cung mới", command=self.create_maze, width=button_width, takefocus=0).pack(pady=6)
+        tk.Button(control_frame, text="▶ Bắt đầu", command=self.start_solving, width=button_width, takefocus=0).pack(pady=6)
+        tk.Button(control_frame, text="■ Dừng", command=self.stop_solving, width=button_width, takefocus=0).pack(pady=6)
+    # cái này giữ cái maze nhưng xóa kết quả đi
+        tk.Button(control_frame, text="🔄 Đặt lại", command=self.reset_state, width=button_width, takefocus=0).pack(pady=6)
 
         tk.Label(control_frame, text="Thuật toán:").pack(pady=(15, 2))
         self.algo_var = tk.StringVar(value="BFS")
         self.algo_combo = ttk.Combobox(control_frame, textvariable=self.algo_var,
-                                       values=["BFS", "DFS", "Dijkstra", "A*"],
-                                       state="readonly", width=button_width - 4)
+                               values=["BFS", "DFS", "Dijkstra", "A*"],
+                               state="readonly", width=button_width - 4, takefocus=0)
         self.algo_combo.pack()
+        self.algo_combo.bind("<<ComboboxSelected>>", lambda e: self.canvas.focus_set())
 
         tk.Label(control_frame, text="Tốc độ:").pack(pady=(15, 2))
         self.speed_var = tk.IntVar(value=60)
         self.speed_scale = tk.Scale(control_frame, from_=1, to=100, orient="horizontal",
-                                    variable=self.speed_var, length=180)
+                            variable=self.speed_var, length=180, takefocus=0)
         self.speed_scale.pack()
 
         self.info_label = tk.Label(control_frame, text="Kết quả: Chưa có", justify="center", wraplength=200)
@@ -60,12 +60,13 @@ class MazeApp:
         self.canvas.bind("<Button-1>", self.on_left_click)
         self.canvas.bind("<Button-3>", self.on_right_click)
 
-        root.bind("<Up>", lambda e: self._move_player(0, -1))
-        root.bind("<Down>", lambda e: self._move_player(0, 1))
-        root.bind("<Left>", lambda e: self._move_player(-1, 0))
-        root.bind("<Right>", lambda e: self._move_player(1, 0))
+        root.bind_all("<Up>",    lambda e: self._move_player(0, -1) or "break")
+        root.bind_all("<Down>",  lambda e: self._move_player(0, 1) or "break")
+        root.bind_all("<Left>",  lambda e: self._move_player(-1, 0) or "break")
+        root.bind_all("<Right>", lambda e: self._move_player(1, 0) or "break")
 
         self.create_maze()
+        self.canvas.focus_set()
 
     def create_maze(self):
         self.maze = generate_maze(ROWS, COLS, extra_paths=int(ROWS * COLS * 0.08))
@@ -119,11 +120,12 @@ class MazeApp:
         self.expanded_set.clear()
         self.path_cells.clear()
         self.info_label.config(text="Kết quả: Chưa có")
-        # xóa các tag vẽ
+        #xoa phan chay truoc do
         self.canvas.delete("visit")
         self.canvas.delete("expand")
         self.canvas.delete("path")
-        # đảm bảo start/goal còn hiển thị
+        self.canvas.delete("win_text")  # xóa text thắng
+        #hien thi start/goal
         self.canvas.delete("start_cell")
         self.canvas.delete("goal_cell")
         self._draw_goal()
@@ -166,7 +168,7 @@ class MazeApp:
         if solver_gen is None:
             self.info_label.config(text="Kết quả: Thuật toán không hợp lệ", fg="red")
             return
-        # trước khi chạy: xóa các vết cũ để trực quan
+        #xoa vet cu de chay
         self.canvas.delete("visit")
         self.canvas.delete("expand")
         self.canvas.delete("path")
@@ -225,17 +227,19 @@ class MazeApp:
         x1, y1 = c * CELL_SIZE + 1, r * CELL_SIZE + 1
         x2, y2 = x1 + CELL_SIZE - 2, y1 + CELL_SIZE - 2
         self.canvas.create_rectangle(x1, y1, x2, y2, fill=fill or "yellow", outline="", tags=(tag or "vis"))
-        # redraw start/goal trên cùng
+        #ve lai start/goal
         self.canvas.delete("start_cell")
         self.canvas.delete("goal_cell")
         self._draw_goal()
-        self._draw_start()
+        if self.player:
+           self.canvas.tag_raise(self.player.icon)
+        #self._draw_start()
 
     def reset_player(self):
-        """
-        Hàm giữ cho backward-compatibility: đặt player về start.
-        Không dùng làm 'Đặt lại' chính, vì nút Đặt lại gọi reset_state)
-        """
+        
+        #Hàm giữ cho backward-compatibility: đặt player về start.
+        #Không dùng làm 'Đặt lại' chính, vì nút Đặt lại gọi reset_state)
+        self.canvas.delete("win_text")  # xóa text thắng
         if self.player:
             try:
                 self.canvas.delete(self.player.icon)

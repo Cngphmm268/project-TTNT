@@ -23,6 +23,7 @@ class Player:
             dy = (new_r - self.r) * self.cell_size
             self.canvas.move(self.icon, dx, dy)
             self.r, self.c = new_r, new_c
+            self.canvas.tag_raise(self.icon) #tranh icon bi de len
             if (self.r, self.c) == self.goal:
                 self.canvas.create_text(cols * self.cell_size // 2, rows * self.cell_size // 2,
-                                        text="🎉 Bạn đã thắng!", fill="red", font=("Arial", 18, "bold"))
+                                        text="🎉 Bạn đã đến nơi!", fill="red", font=("Arial", 18, "bold"),tags="win_text")
