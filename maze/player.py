@@ -1,4 +1,3 @@
-# maze/player.py
 class Player:
     def __init__(self, canvas, r, c, cell_size, maze, goal):
         self.canvas = canvas

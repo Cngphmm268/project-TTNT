@@ -1,6 +1,5 @@
-# maze/graph.py
 """
-Graph utilities cho project maze -> chuyển grid 2D (r,c) thành đồ thị
+Đang là maze -> chuyển maze 2D (r,c) thành graph
 Node: dùng tuple (r, c)
 Edge: (u, v, weight) với weight mặc định = 1
 """

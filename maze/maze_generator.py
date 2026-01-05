@@ -1,4 +1,3 @@
-# maze/maze_generator.py
 import random
 
 def generate_maze(rows, cols, extra_paths=40):
