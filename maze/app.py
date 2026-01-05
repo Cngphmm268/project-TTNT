@@ -14,7 +14,7 @@ CELL_SIZE = 30
 class MazeApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Maze Visualizer — Graph-based BFS/DFS/Dijkstra/A*")
+        self.root.title("Maze Visualizer — BFS/DFS/Dijkstra/A*")
 
         self.canvas = tk.Canvas(root, width=COLS * CELL_SIZE, height=ROWS * CELL_SIZE, bg="white")
         self.canvas.grid(row=0, column=0, rowspan=4, padx=10, pady=10)
