@@ -16,12 +16,12 @@ def bfs_on_graph(graph, start, goal):
     yield ("visit", start)
     while q:
         cur = q.popleft()
-        yield ("expand", cur)
+        yield ("expand", cur)#o dc pop ra de check
         if cur == goal: break
         for nbr, _ in graph.neighbors(cur):
             if nbr not in came_from:
                 came_from[nbr] = cur
-                q.append(nbr)
+                q.append(nbr) 
                 yield ("visit", nbr)
     yield ("path", reconstruct_path(came_from, goal) if goal in came_from else None)
 

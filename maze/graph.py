@@ -6,8 +6,6 @@ Edge: (u, v, weight) với weight mặc định = 1
 
 from collections import defaultdict
 import json
-
-
 class Graph:
     def __init__(self):
         self.adj = defaultdict(list)
@@ -73,6 +71,7 @@ class Graph:
         with open(path, "r", encoding="utf-8") as f:
             d = json.load(f)
         return Graph.from_dict(d)
+    
 
 
 def grid_to_graph(maze):
@@ -83,7 +82,7 @@ def grid_to_graph(maze):
 
     g = Graph()
     dirs = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-
+                
     for r in range(rows):
         for c in range(cols):
             if maze[r][c] == 0:

@@ -70,7 +70,7 @@ class MazeApp:
 
     def create_maze(self):
         self.maze = generate_maze(ROWS, COLS, extra_paths=int(ROWS * COLS * 0.08))
-        self.graph = grid_to_graph(self.maze)
+        self.graph= grid_to_graph(self.maze)
 
         self.canvas.delete("all")
         for r in range(ROWS):
@@ -112,7 +112,7 @@ class MazeApp:
     def reset_state(self):
         """
         Giữ nguyên mê cung, start/goal; xóa các hình vẽ visited/expanded/path
-        và reset tất cả biến trạng thái để có thể chạy thuật toán khác.
+        và reset tất cả biến để chạy thuật toán khác.
         """
         self.running = False
         self.solver_gen = None
@@ -124,7 +124,7 @@ class MazeApp:
         self.canvas.delete("visit")
         self.canvas.delete("expand")
         self.canvas.delete("path")
-        self.canvas.delete("win_text")  # xóa text thắng
+        self.canvas.delete("win_text")
         #hien thi start/goal
         self.canvas.delete("start_cell")
         self.canvas.delete("goal_cell")
@@ -216,7 +216,7 @@ class MazeApp:
                     self.info_label.config(text=f"Kết quả: Không tìm thấy ({self.algo_var.get()}) | {elapsed:.3f}s", fg="red")
                 return
             speed = self.speed_var.get()
-            delay = max(5, int(500 * (1 - speed / 100.0)))
+            delay = max(5, int(300 * (1 - speed / 100.0))) #chinh speed
             self.root.after(delay, self._step_solver)
         except StopIteration:
             self.running = False
