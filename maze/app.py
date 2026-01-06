@@ -172,6 +172,7 @@ class MazeApp:
         self.canvas.delete("visit")
         self.canvas.delete("expand")
         self.canvas.delete("path")
+        self.canvas.delete("win_text")
         self.visited_set.clear()
         self.expanded_set.clear()
         self.path_cells.clear()
